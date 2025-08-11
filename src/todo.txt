@@ -1,0 +1,25 @@
+add discrete zoomscales and prescale loaded tilesets to those zoom scales (done)-> preparing for higher resolution tilesets
+
+build renderer (DONE !!!)
+4d world array - got basics down still need optimizations
+chunking
+entity types
+    terrain - floor, walls, furniture, ?doors, 
+    entities - people and items
+    effects - lighting? maybe we will do lighting like this maybe not
+
+pick margins for play area and make sure its enough to fill ui
+
+
+add entities class to game.py (done)
+still need to do :
+    -movement without breaking render (likely something todo for renderer class not entities class)
+
+--fix player class (player class is gone! not applicable)--
+    ----movement-- 
+    ---tie player to an entity--
+
+render class -
+    movement breaks it , fix this
+
+keybinds file
