@@ -2,7 +2,7 @@
 
 todo:
 
-get this stupid debug text code out of here
+DONE get this stupid debug text code out of here
 saving/loading broken
 optimize amount of chunks rendered
 DONE chunks are never marked as unmodified once modified bug

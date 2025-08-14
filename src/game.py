@@ -36,12 +36,12 @@ class World:
                 for cz in range(World.DEPTH_CHUNKS):
                     self.chunks[(cx, cy, cz)] = Chunk(World.CHUNK_SIZE_UX) # fill chunks[] with a chunk
 
-    def saveWorld(world, filename="world.dat"):
+    def save(self, filename="world.dat"):
         with gzip.open(filename, "wb") as f:
-            pickle.dump(world, f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
         print(f"{filename} saved")
 
-    def loadWorld(filename="world.dat"):
+    def load(filename="world.dat"):
         try:
             with gzip.open(filename, 'rb') as f:
                 print(f"{filename} loaded")

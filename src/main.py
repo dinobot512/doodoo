@@ -22,7 +22,7 @@ def main():
 
     if os.path.exists(FC.WORLD_FILENAME):
         print(f"found {FC.WORLD_FILENAME}, loading")
-        PLAY_WORLD = World.loadWorld(FC.WORLD_FILENAME)
+        PLAY_WORLD = World.load(FC.WORLD_FILENAME)
         if PLAY_WORLD is None:
             print(f"unable to open {FC.WORLD_FILENAME}")
             quit()
@@ -34,7 +34,7 @@ def main():
             FC.WORLD_HEIGHT_cx,
             FC.CHUNKS_SIDE_LEN_ux
             )
-        World.saveWorld(PLAY_WORLD,FC.WORLD_FILENAME)
+        World.save(PLAY_WORLD,FC.WORLD_FILENAME)
         print(f"{FC.WORLD_FILENAME} generated and saved")
 
     PLAY_RECT = pygame.Rect(FC.PLAY_AREA_TOPLEFT,FC.PLAY_AREA_DIMENSIONS) #designate play area
@@ -54,7 +54,7 @@ def main():
             CONFIG.PLAYER_ENTITY_TILE_ID,
             FC.PLAYER_SPAWN_COORDS_ux
             )
-        World.saveWorld(PLAY_WORLD)
+        World.save(PLAY_WORLD)
     else:
         PLAYER_ENTITY = PLAY_WORLD.entity_index[FC.PLAYER_ENTITY_NAME]
         print(f"found player entity at {PLAYER_ENTITY.coordinates_ux}")
@@ -69,7 +69,7 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                World.saveWorld(PLAY_WORLD)
+                World.save(PLAY_WORLD)
             if event.type == pygame.KEYDOWN:
                 updateRender = INPUT_HANDLER.handleKeydown(event.key)
 

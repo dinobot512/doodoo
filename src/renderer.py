@@ -131,10 +131,10 @@ class Renderer:
                     chunk_cx = (cx,cy,z_ux)
                     chunkRender = self._render_single_chunk(chunk_cx)
                     rSurface.blit(chunkRender.surface, (px, py))
-                    px += chunkWidth_px
+                px += chunkWidth_px
 
                 if chunk and self.debug_mode and chunkRender.code == RCode.SUCCESS:
-                    chunksRenderedString += "#"
+                    chunksRenderedString += "R"
                     chunksRendered += 1
                 elif chunk and self.debug_mode and chunkRender.code == RCode.CACHE_HIT:
                     chunksRenderedString += "C"
@@ -187,8 +187,8 @@ class Renderer:
         scaledChunkWidth_px = self.world.chunk_size_ux * scaledTileWidth_px
         scaledChunkHeight_px = self.world.chunk_size_ux * scaledTileHeight_px
 
-        chunksWidth_cx = max(3,(self.bounds.w // scaledChunkWidth_px)+2)
-        chunksHeight_cx = max(3,(self.bounds.h // scaledChunkHeight_px)+2)
+        chunksWidth_cx = max(3,(self.bounds.w // scaledChunkWidth_px))
+        chunksHeight_cx = max(3,(self.bounds.h // scaledChunkHeight_px))
 
         startChunkX_cx = max(0,coords[0] // self.world.chunk_size_ux - chunksWidth_cx // 2)
         startChunkY_cx = max(0,coords[1] // self.world.chunk_size_ux - chunksHeight_cx // 2)
