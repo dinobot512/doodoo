@@ -3,16 +3,26 @@ from game import World
 from dataclasses import dataclass
 from enum import Enum
 
+class RCode(Enum): #R is short for render
+    SUCCESS = 0
+    ERROR = 1
+    CACHE_HIT = 2
+
+    def __str__(self):
+        messages = {
+            RCode.SUCCESS:     "successfully rendered",
+            RCode.ERROR:       "failed render",
+            RCode.CACHE_HIT:   "used cached surface"
+        }
+        return messages[self]
+
 @dataclass
-class RenderResult:
+class RResult:
     surface: pygame.Surface
-    code: int
-    """
-    code key
-    0 - rendered
-    1 - used cache (if applicable)
-    2 - generic error
-    """
+    code: RCode
+
+    def __str__(self):
+        return f"{self.code} (Code: {self.code.value})"
 
 class Renderer:
     def __init__(
@@ -34,8 +44,7 @@ class Renderer:
     def _render_cell(
             self,
             coords_ux: tuple[int,int,int],
-            ) -> RenderResult:
-        rCode = 2
+            ) -> RResult:
         cell = self.world.getCell(coords_ux)
         rSurface = self.tileset[cell.terrainID].copy()
         if len(cell.entities) > 0:
@@ -43,15 +52,13 @@ class Renderer:
             if self.debug_mode:
                 print(f"rendering entity at {coords_ux}: {topEntity}")
             rSurface.blit(self.tileset[topEntity.tileID],(0,0))
-            rCode = 0
-        return RenderResult(rSurface,rCode)
+        return RResult(rSurface,RCode.SUCCESS)
 
 
     def _render_single_chunk(
             self,
             chunk_cx: tuple[int,int,int]
-            ) -> RenderResult:
-        rCode = 2
+            ) -> RResult:
 
         x_cx, y_cx, z_ux = chunk_cx[0], chunk_cx[1], chunk_cx[2]
 
@@ -60,8 +67,7 @@ class Renderer:
 
         if (cache_key in self.good_surfaces and modified_key not in self.world.modified_chunks):
             rSurface = self.good_surfaces[cache_key]
-            rCode = 1
-            return RenderResult(rSurface,rCode)
+            return RResult(rSurface,RCode.CACHE_HIT)
 
         worldChunkSize_ux = self.world.chunk_size_ux
         tileWidth_px = self.tileset[0].get_width()
@@ -80,24 +86,26 @@ class Renderer:
 
         if self.debug_mode:
             for x in range(worldChunkSize_ux):
+                if x == 0: borderColor = (255,0,255)
+                else: borderColor = (128,128,128)
                 xCoord_px = x*tileWidth_px
-                pygame.draw.line(rSurface,(255,0,255),(xCoord_px,0),(xCoord_px,rSurface.get_height()))
+                pygame.draw.line(rSurface,borderColor,(xCoord_px,0),(xCoord_px,rSurface.get_height()))
             for y in range(worldChunkSize_ux):
+                if y == 0: borderColor = (255,0,255)
+                else: borderColor = (128,128,128)
                 yCoord_px = y*tileHeight_px
-                pygame.draw.line(rSurface,(255,0,255),(0,yCoord_px),(rSurface.get_width(),yCoord_px))
+                pygame.draw.line(rSurface,borderColor,(0,yCoord_px),(rSurface.get_width(),yCoord_px))
 
         self.good_surfaces[cache_key] = rSurface
-        rCode = 0
-        return RenderResult(rSurface,rCode)
+        return RResult(rSurface,RCode.SUCCESS)
 
     def _render_chunks(
             self,
             chunksWidthRange_chunks: range,
             chunksHeightRange_chunks: range,
             z_ux: int,
-            ) -> RenderResult:
-        rCode = 2
-        
+            ) -> RResult:
+
         for cx, cy, uz in self.world.modified_chunks:
             for zoom in self.zoom_scales:
                 cache_key = (cx, cy, uz, zoom)
@@ -112,6 +120,8 @@ class Renderer:
 
         if self.debug_mode:
             chunksRenderedString = ""
+            chunksRendered = 0
+            chunkCacheHits = 0
         px,py = 0,0
         for cy in chunksHeightRange_chunks:
             for cx in chunksWidthRange_chunks:
@@ -122,10 +132,14 @@ class Renderer:
                     rSurface.blit(chunkRender.surface, (px, py))
                     px += chunkWidth_px
 
-                    if self.debug_mode and chunkRender.code == 0:
-                        chunksRenderedString += "#"
-                    elif self.debug_mode and chunkRender.code == 1: #used cached render
-                        chunksRenderedString += "C"
+                if chunk and self.debug_mode and chunkRender.code == RCode.SUCCESS:
+                    chunksRenderedString += "#"
+                    chunksRendered += 1
+                elif chunk and self.debug_mode and chunkRender.code == RCode.CACHE_HIT:
+                    chunksRenderedString += "C"
+                    chunkCacheHits += 1
+                elif self.debug_mode:
+                    chunksRenderedString += "X"
             px = 0
             py += chunkHeight_px
 
@@ -136,9 +150,9 @@ class Renderer:
 
         if self.debug_mode:
             topleftChunkCoords_ux = (list(chunksWidthRange_chunks)[0],list(chunksHeightRange_chunks)[0])
-            print(f"rendered chunks (topleft: {topleftChunkCoords_ux}):\n{chunksRenderedString}")
+            print(f"rendered chunks (topleft: {topleftChunkCoords_ux}):\n{chunksRenderedString}\nchunks rendered: {chunksRendered}\nsurfaces reused: {chunkCacheHits}")
 
-        return RenderResult(rSurface,rCode)
+        return RResult(rSurface,RCode.SUCCESS)
     
     def decrementZoom(self):
          oldZoomScale = self.zoom
