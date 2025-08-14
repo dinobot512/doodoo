@@ -26,6 +26,10 @@ class World:
         coords_cx = self.uxToCX(coords_ux)
         self.modified_chunks.add(coords_cx)
 
+    def markChunkCorrected(self, coords_cx: tuple[int,int,int]):
+        if coords_cx in self.modified_chunks:
+            self.modified_chunks.remove(coords_cx)
+
     def _init_empty_world(self) -> None:      
         for cx in range(World.WIDTH_CHUNKS):
             for cy in range(World.HEIGHT_CHUNKS):

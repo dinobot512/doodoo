@@ -97,6 +97,7 @@ class Renderer:
                 pygame.draw.line(rSurface,borderColor,(0,yCoord_px),(rSurface.get_width(),yCoord_px))
 
         self.good_surfaces[cache_key] = rSurface
+        self.world.markChunkCorrected(modified_key)
         return RResult(rSurface,RCode.SUCCESS)
 
     def _render_chunks(
@@ -145,8 +146,6 @@ class Renderer:
 
             if self.debug_mode:
                 chunksRenderedString += "\n"
-
-        rCode = 0
 
         if self.debug_mode:
             topleftChunkCoords_ux = (list(chunksWidthRange_chunks)[0],list(chunksHeightRange_chunks)[0])

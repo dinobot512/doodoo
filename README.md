@@ -2,8 +2,9 @@
 
 todo:
 
+optimize amount of chunks rendered
 chunks are never marked as unmodified once modified bug
-big constant datatype
+DONE big constant datatype
 
 
 
