@@ -1,5 +1,18 @@
 import pygame
 from game import World
+from dataclasses import dataclass
+from enum import Enum
+
+@dataclass
+class RenderResult:
+    surface: pygame.Surface
+    code: int
+    """
+    code key
+    0 - rendered
+    1 - used cache (if applicable)
+    2 - generic error
+    """
 
 class Renderer:
     def __init__(
@@ -21,7 +34,8 @@ class Renderer:
     def _render_cell(
             self,
             coords_ux: tuple[int,int,int],
-            ) -> pygame.Surface:
+            ) -> RenderResult:
+        rCode = 2
         cell = self.world.getCell(coords_ux)
         rSurface = self.tileset[cell.terrainID].copy()
         if len(cell.entities) > 0:
@@ -29,30 +43,41 @@ class Renderer:
             if self.debug_mode:
                 print(f"rendering entity at {coords_ux}: {topEntity}")
             rSurface.blit(self.tileset[topEntity.tileID],(0,0))
-        return rSurface
+            rCode = 0
+        return RenderResult(rSurface,rCode)
 
 
     def _render_single_chunk(
             self,
-            x_cx: int,
-            y_cx: int,
-            z_ux: int,
-            ) -> pygame.Surface:
-        
+            chunk_cx: tuple[int,int,int]
+            ) -> RenderResult:
+        rCode = 2
+
+        x_cx, y_cx, z_ux = chunk_cx[0], chunk_cx[1], chunk_cx[2]
+
         cache_key = (x_cx, y_cx, z_ux, self.zoom)
         modified_key = (x_cx, y_cx, z_ux)
+
         if (cache_key in self.good_surfaces and modified_key not in self.world.modified_chunks):
-            return self.good_surfaces[cache_key]
+            rSurface = self.good_surfaces[cache_key]
+            rCode = 1
+            return RenderResult(rSurface,rCode)
+
         worldChunkSize_ux = self.world.chunk_size_ux
         tileWidth_px = self.tileset[0].get_width()
         tileHeight_px = self.tileset[0].get_height()
         chunkWidth_px = worldChunkSize_ux*tileWidth_px
         chunkHeight_px = worldChunkSize_ux*tileHeight_px
+
         rSurface = pygame.Surface((chunkWidth_px,chunkHeight_px))
+
         for y in range(worldChunkSize_ux):
             for x in range(worldChunkSize_ux):
                 tileCoords_px = (x*tileWidth_px,y*tileHeight_px)
-                rSurface.blit(self._render_cell((x_cx*worldChunkSize_ux+x,y_cx*worldChunkSize_ux+y,z_ux)),tileCoords_px)
+                cellCoords_ux = (x_cx*worldChunkSize_ux+x,y_cx*worldChunkSize_ux+y,z_ux)
+                cellRender = self._render_cell(cellCoords_ux)
+                rSurface.blit(cellRender.surface,tileCoords_px)
+
         if self.debug_mode:
             for x in range(worldChunkSize_ux):
                 xCoord_px = x*tileWidth_px
@@ -60,45 +85,60 @@ class Renderer:
             for y in range(worldChunkSize_ux):
                 yCoord_px = y*tileHeight_px
                 pygame.draw.line(rSurface,(255,0,255),(0,yCoord_px),(rSurface.get_width(),yCoord_px))
+
         self.good_surfaces[cache_key] = rSurface
-        return rSurface
+        rCode = 0
+        return RenderResult(rSurface,rCode)
 
     def _render_chunks(
             self,
             chunksWidthRange_chunks: range,
             chunksHeightRange_chunks: range,
             z_ux: int,
-            ) -> pygame.Surface:
+            ) -> RenderResult:
+        rCode = 2
         
         for cx, cy, uz in self.world.modified_chunks:
             for zoom in self.zoom_scales:
                 cache_key = (cx, cy, uz, zoom)
                 if cache_key in self.good_surfaces:
                     del self.good_surfaces[cache_key]
-                                         
-                                         
+                                                           
         chunkWidth_px = self.tileset[0].get_width()*self.world.chunk_size_ux
         chunkHeight_px = self.tileset[0].get_width()*self.world.chunk_size_ux
         surfaceWidth_px = len(chunksWidthRange_chunks)*chunkWidth_px
         surfaceHeight_px = len(chunksHeightRange_chunks)*chunkHeight_px
-        returnSurface = pygame.Surface((surfaceWidth_px,surfaceHeight_px))
+        rSurface = pygame.Surface((surfaceWidth_px,surfaceHeight_px))
+
+        if self.debug_mode:
+            chunksRenderedString = ""
         px,py = 0,0
-        chunksRenderedString = ""
         for cy in chunksHeightRange_chunks:
             for cx in chunksWidthRange_chunks:
                 chunk = self.world.chunks.get((cx, cy, z_ux // self.world.chunk_size_ux))
                 if chunk:
-                    intermediateSurface = self._render_single_chunk(cx,cy,z_ux)
-                    returnSurface.blit(intermediateSurface, (px, py))
+                    chunk_cx = (cx,cy,z_ux)
+                    chunkRender = self._render_single_chunk(chunk_cx)
+                    rSurface.blit(chunkRender.surface, (px, py))
                     px += chunkWidth_px
-                    chunksRenderedString += "#"
+
+                    if self.debug_mode and chunkRender.code == 0:
+                        chunksRenderedString += "#"
+                    elif self.debug_mode and chunkRender.code == 1: #used cached render
+                        chunksRenderedString += "C"
             px = 0
             py += chunkHeight_px
-            chunksRenderedString += "\n"
-        topleftChunkCoords_ux = (list(chunksWidthRange_chunks)[0],list(chunksHeightRange_chunks)[0])
+
+            if self.debug_mode:
+                chunksRenderedString += "\n"
+
+        rCode = 0
+
         if self.debug_mode:
+            topleftChunkCoords_ux = (list(chunksWidthRange_chunks)[0],list(chunksHeightRange_chunks)[0])
             print(f"rendered chunks (topleft: {topleftChunkCoords_ux}):\n{chunksRenderedString}")
-        return returnSurface
+
+        return RenderResult(rSurface,rCode)
     
     def decrementZoom(self):
          oldZoomScale = self.zoom
@@ -144,7 +184,7 @@ class Renderer:
         chunksHeightRange_cx = range(startChunkY_cx,chunksHeight_cx+startChunkY_cx)
         z_ux = coords[2]
 
-        chunksSurface = self._render_chunks(chunksWidthRange_cx ,chunksHeightRange_cx,z_ux)
+        chunksSurface = self._render_chunks(chunksWidthRange_cx ,chunksHeightRange_cx,z_ux).surface
 
         playerX_px = (coords[0] - startChunkX_cx * self.world.chunk_size_ux)*scaledTileWidth_px
         playerY_px = (coords[1] - startChunkY_cx * self.world.chunk_size_ux)*scaledTileHeight_px
