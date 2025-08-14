@@ -16,8 +16,7 @@ class Renderer:
         self.zoom = zoomScales[1]
         self.tileset = self.tilesets[self.zoom]
         self.debug_mode = False
-        self.surface_cache = {} # Format: {(cx, cy, uz, zoom)}
-        self.bad_surfaces = set()
+        self.good_surfaces = {} # Format: {(cx, cy, uz, zoom)}
 
     def _render_cell(
             self,
@@ -41,12 +40,9 @@ class Renderer:
             ) -> pygame.Surface:
         
         cache_key = (x_cx, y_cx, z_ux, self.zoom)
-        modified_key = (x_cx, y_cx, z_ux // self.world.chunk_size_ux)
-        chunkModified = False
-        if modified_key in self.world.modified_chunks:
-            chunkModified = True
-        if (cache_key in self.surface_cache and chunkModified == False):
-            return self.surface_cache[cache_key]
+        modified_key = (x_cx, y_cx, z_ux)
+        if (cache_key in self.good_surfaces and modified_key not in self.world.modified_chunks):
+            return self.good_surfaces[cache_key]
         worldChunkSize_ux = self.world.chunk_size_ux
         tileWidth_px = self.tileset[0].get_width()
         tileHeight_px = self.tileset[0].get_height()
@@ -64,7 +60,7 @@ class Renderer:
             for y in range(worldChunkSize_ux):
                 yCoord_px = y*tileHeight_px
                 pygame.draw.line(rSurface,(255,0,255),(0,yCoord_px),(rSurface.get_width(),yCoord_px))
-        self.surface_cache[cache_key]
+        self.good_surfaces[cache_key] = rSurface
         return rSurface
 
     def _render_chunks(
@@ -74,11 +70,11 @@ class Renderer:
             z_ux: int,
             ) -> pygame.Surface:
         
-        """for cx, cy, uz in self.world.modified_chunks:
+        for cx, cy, uz in self.world.modified_chunks:
             for zoom in self.zoom_scales:
                 cache_key = (cx, cy, uz, zoom)
-                if cache_key in self.surface_cache:
-                    del self.chunk_cache[cache_key]"""
+                if cache_key in self.good_surfaces:
+                    del self.good_surfaces[cache_key]
                                          
                                          
         chunkWidth_px = self.tileset[0].get_width()*self.world.chunk_size_ux

@@ -28,7 +28,7 @@ def main():
         print(f"found {WORLD_FILENAME}, loading")
 
         PLAY_WORLD = World.loadWorld(WORLD_FILENAME)
-        if PLAY_WORLD == None:
+        if PLAY_WORLD is None:
             debugTextbox.string += f"\nunable to open {WORLD_FILENAME}"
             debugTextbox.draw(display)
             pygame.display.update(loadingTextRect)
@@ -76,15 +76,16 @@ def main():
 
     print("Keys in entity_index", PLAY_WORLD.entity_index.keys())
     PLAYER_ENTITY_NAME = "Player Entity"
-    SPAWN_COORDS_ux = [PLAY_WORLD.dimensions_ux[0]//2,
-                   PLAY_WORLD.dimensions_ux[1]//2,
-                   0]
     if PLAYER_ENTITY_NAME not in PLAY_WORLD.entity_index:
         debugTextbox.string += f"\nno player entity found"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
         print(f"no player entity found")
-
+        SPAWN_COORDS_ux = [
+            PLAY_WORLD.DIMENSIONS_UX[0]//2,
+            PLAY_WORLD.DIMENSIONS_UX[1]//2,
+            0
+            ]
         debugTextbox.string += f"\nplacing player entity at {SPAWN_COORDS_ux}"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
@@ -114,8 +115,6 @@ def main():
     keyPressed = False
     while keyPressed == False:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
             if event.type == pygame.KEYDOWN:
                 keyPressed = True
 
