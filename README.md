@@ -2,8 +2,10 @@
 
 todo:
 
+get this stupid debug text code out of here
+saving/loading broken
 optimize amount of chunks rendered
-chunks are never marked as unmodified once modified bug
+DONE chunks are never marked as unmodified once modified bug
 DONE big constant datatype
 
 
