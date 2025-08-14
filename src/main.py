@@ -1,6 +1,8 @@
 import pygame, os, time, random
 from game import World, Entity
 import tileset, renderer, input, ui, change_surface
+from constants import FrozenConstants as FC
+from constants import RuntimeConfig
 
 
 def main():
@@ -8,93 +10,93 @@ def main():
     #get this scripts path, turn it absolute(from root) get the name of the directory its in and make that the working directory (/projectName/src)
 
     pygame.init()
-    pygame.key.set_repeat(500,100)
+    pygame.key.set_repeat(FC.KEY_REPEAT_DELAY,FC.KEY_REPEAT_INTERVAL)
 
-    DISPLAY_WIDTH, DISPLAY_HEIGHT = 1800, 900
-    display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT)) #make window with following dimensions
+    display = pygame.display.set_mode(FC.DISPLAY_DIMENSIONS) #make window with following dimensions
     pygame.display.set_caption("doodoo") #call window this
-    ZOOM_SCALES = [1,2,3,4,5,6,7,8] #zoom ordered list
-
-    ASCII_8x8 = tileset.generateScaledTilesets(ZOOM_SCALES,tileset.load_tileset("8x8_ascii.png",(8,8))) #8x8 font ascii tiles
+    
+    ASCII_8x8 = tileset.generateScaledTilesets(FC.ZOOM_SCALES,tileset.load_tileset("8x8_ascii.png",(8,8))) #8x8 font ascii tiles
 
     loadingTextRect = pygame.Rect(100,100,1600,700)
-    debugTextbox = ui.textbox(loadingTextRect,"loading infos:",ASCII_8x8[2])
+    debugTextbox = ui.textbox(loadingTextRect,"loading infos:",ASCII_8x8[1])
 
-    WORLD_FILENAME = "world.dat"
-    if os.path.exists(WORLD_FILENAME):
-        debugTextbox.string += f"\nfound {WORLD_FILENAME}, loading"
+    CONFIG = RuntimeConfig()
+
+    debugTextbox.string += f"loaded configs"
+    debugTextbox.draw(display)
+    pygame.display.update(loadingTextRect)
+    print(f"loaded configs")
+
+    if os.path.exists(FC.WORLD_FILENAME):
+        debugTextbox.string += f"\nfound {FC.WORLD_FILENAME}, loading"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
-        print(f"found {WORLD_FILENAME}, loading")
+        print(f"found {FC.WORLD_FILENAME}, loading")
 
-        PLAY_WORLD = World.loadWorld(WORLD_FILENAME)
+        PLAY_WORLD = World.loadWorld(FC.WORLD_FILENAME)
         if PLAY_WORLD is None:
-            debugTextbox.string += f"\nunable to open {WORLD_FILENAME}"
+            debugTextbox.string += f"\nunable to open {FC.WORLD_FILENAME}"
             debugTextbox.draw(display)
             pygame.display.update(loadingTextRect)
-            print(f"unable to open {WORLD_FILENAME}")
+            print(f"unable to open {FC.WORLD_FILENAME}")
             quit()
     else:
-        debugTextbox.string += f"\n{WORLD_FILENAME} does not exist, generating world and saving to file"
+        debugTextbox.string += f"\n{FC.WORLD_FILENAME} does not exist, generating world and saving to file"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
-        print(f"{WORLD_FILENAME} does not exist, generating world and saving to file")
-        WORLD_WIDTH_CHUNKS = 8
-        WORLD_HEIGHT_CHUNKS = 8 
-        WORLD_DEPTH_CHUNKS = 1
-        CHUNKS_SIDE_LEN_ux = 16
-        PLAY_WORLD = World(WORLD_WIDTH_CHUNKS,WORLD_HEIGHT_CHUNKS,WORLD_DEPTH_CHUNKS,CHUNKS_SIDE_LEN_ux)
-        World.saveWorld(PLAY_WORLD,WORLD_FILENAME)
-        debugTextbox.string += f"\n{WORLD_FILENAME} generated and saved"
+        print(f"{FC.WORLD_FILENAME} does not exist, generating world and saving to file")
+        PLAY_WORLD = World(
+            FC.WORLD_WIDTH_cx,
+            FC.WORLD_HEIGHT_cx,
+            FC.WORLD_HEIGHT_cx,
+            FC.CHUNKS_SIDE_LEN_ux
+            )
+        World.saveWorld(PLAY_WORLD,FC.WORLD_FILENAME)
+        debugTextbox.string += f"\n{FC.WORLD_FILENAME} generated and saved"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
-        print(f"{WORLD_FILENAME} generated and saved")
+        print(f"{FC.WORLD_FILENAME} generated and saved")
 
     debugTextbox.string += "\nbuilding user interface"
     debugTextbox.draw(display)
     pygame.display.update(loadingTextRect)
     print("building user interface")
 
-    MARGINS = 50
-    PLAY_RECT = pygame.Rect(MARGINS,MARGINS,DISPLAY_WIDTH-2*MARGINS,DISPLAY_HEIGHT-2*MARGINS) #designate play area
-
-    PLAY_TILES_FILENAME = "16x16_tiles.png"
+    PLAY_RECT = pygame.Rect(FC.PLAY_AREA_TOPLEFT,FC.PLAY_AREA_DIMENSIONS) #designate play area
     
-    debugTextbox.string += f"\nloading tileset {PLAY_TILES_FILENAME}"
+    debugTextbox.string += f"\nloading tileset {FC.PLAY_TILES_FILENAME}"
     debugTextbox.draw(display)
     pygame.display.update(loadingTextRect)
-    print(f"loading tileset {PLAY_TILES_FILENAME}")
+    print(f"loading tileset {FC.PLAY_TILES_FILENAME}")
 
-    PLAY_TILES = tileset.generateScaledTilesets(ZOOM_SCALES,tileset.load_tileset(PLAY_TILES_FILENAME,(16,16)))
+    PLAY_TILES = tileset.generateScaledTilesets(FC.ZOOM_SCALES,tileset.load_tileset(FC.PLAY_TILES_FILENAME,FC.PLAY_TILES_DIMENSIONS))
     
     debugTextbox.string += "\ninitializing renderer"
     debugTextbox.draw(display)
     pygame.display.update(loadingTextRect)
     print("initializing renderer")
 
-    RENDERER = renderer.Renderer(PLAY_RECT,PLAY_TILES,PLAY_WORLD,ZOOM_SCALES)
+    RENDERER = renderer.Renderer(PLAY_RECT,PLAY_TILES,PLAY_WORLD,FC.ZOOM_SCALES)
 
     print("Keys in entity_index", PLAY_WORLD.entity_index.keys())
-    PLAYER_ENTITY_NAME = "Player Entity"
-    if PLAYER_ENTITY_NAME not in PLAY_WORLD.entity_index:
+    if FC.PLAYER_ENTITY_NAME not in PLAY_WORLD.entity_index:
         debugTextbox.string += f"\nno player entity found"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
         print(f"no player entity found")
-        SPAWN_COORDS_ux = [
-            PLAY_WORLD.DIMENSIONS_UX[0]//2,
-            PLAY_WORLD.DIMENSIONS_UX[1]//2,
-            0
-            ]
-        debugTextbox.string += f"\nplacing player entity at {SPAWN_COORDS_ux}"
+        debugTextbox.string += f"\nplacing player entity at {FC.PLAYER_SPAWN_COORDS_ux}"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)
-        print(f"placing player entity at {SPAWN_COORDS_ux}")
-
-        PLAYER_ENTITY = Entity(PLAY_WORLD,PLAYER_ENTITY_NAME,3,SPAWN_COORDS_ux)
+        print(f"placing player entity at {FC.PLAYER_SPAWN_COORDS_ux}")
+        PLAYER_ENTITY = Entity(
+            PLAY_WORLD,
+            FC.PLAYER_ENTITY_NAME,
+            CONFIG.PLAYER_ENTITY_TILE_ID,
+            FC.PLAYER_SPAWN_COORDS_ux
+            )
         World.saveWorld(PLAY_WORLD)
     else:
-        PLAYER_ENTITY = PLAY_WORLD.entity_index[PLAYER_ENTITY_NAME]
+        PLAYER_ENTITY = PLAY_WORLD.entity_index[FC.PLAYER_ENTITY_NAME]
         debugTextbox.string += f"\nfound player entity at {PLAYER_ENTITY.coordinates_ux}"
         debugTextbox.draw(display)
         pygame.display.update(loadingTextRect)

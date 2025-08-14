@@ -1,5 +1,14 @@
 --- doodoo rougelike ---
 
+todo:
+
+chunks are never marked as unmodified once modified bug
+big constant datatype
+
+
+
+
+
 Rendering Steps
 
 init renderer
