@@ -22,10 +22,10 @@ class InputHandler:
                         pygame.K_MINUS:     {"func": lambda: self.renderer.decrementZoom(), "render": True},
                         pygame.K_EQUALS:    {"func": lambda: self.renderer.incrementZoom(), "render": True},
 
-                        pygame.K_5:     {"func": lambda: self.world.saveWorld(), "render": False},
-                        pygame.K_9:     {"func": lambda: self.world.loadWorld(), "render": False},
+                        pygame.K_F5:     {"func": lambda: self.world.saveWorld(), "render": False},
+                        pygame.K_F5:     {"func": lambda: self.world.loadWorld(), "render": False},
 
-                        pygame.K_SEMICOLON: {"func": lambda: self.renderer.toggleDebugMode(),"render": True}
+                        pygame.K_F3: {"func": lambda: self.renderer.toggleDebugMode(),"render": True}
                 }
 
         def handleKeydown(self, key) -> bool:

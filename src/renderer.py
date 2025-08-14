@@ -119,6 +119,7 @@ class Renderer:
             self.debug_mode = False
         else:
             self.debug_mode = True
+        self.good_surfaces.clear()
         print(f"grid overlay {self.debug_mode}")
     
     def render(
